@@ -3,8 +3,6 @@
 #include <time.h>
 using namespace std;
 
-#define MSMPI_NO_DEPRECATE_20
-
 int main() {
 
 	std::srand(time(NULL));
@@ -21,11 +19,11 @@ int main() {
 	};
 
 	Student student[6];
-	Student studentBuffer[6];
+	Student studentBuufer[6];
 
 	int blockcounts[2];
 	MPI_Datatype oldtypes[2], MPI_Student;
-	MPI_Aint offset[2], extent;
+	MPI_Aint offset[2], extent, lower_bound;
 
 	MPI_Init(NULL, NULL);
 
@@ -38,13 +36,13 @@ int main() {
 	offset[0] = 0;
 
 	//MPI_FLOAT field
-	MPI_Type_extent(MPI_INT, &extent);
+	MPI_Type_get_extent(MPI_INT,&lower_bound, &extent);
 	blockcounts[1] = 1;
 	oldtypes[1] = MPI_FLOAT;
 	offset[1] = 3 * extent;
 
 	//define the struct
-	MPI_Type_create_struct(3, blockcounts, offset, oldtypes, &MPI_Student);
+	MPI_Type_create_struct(2, blockcounts, offset, oldtypes, &MPI_Student);
 	MPI_Type_commit(&MPI_Student);
 
 	if (rank == 0) {
@@ -54,30 +52,36 @@ int main() {
 			student[i].studentID = i;
 			student[i].year = (1 + rand()) % 5;
 			student[i].age = (19 + rand()) % 31;
-			student[i].grade = (1 + rand()) % 11;
+			student[i].grade = float( (1 + rand()) % 11 );
 
 		}
-		
-		//assume that we have 7 processes(1 master and 6 slaves)
+
+		//assume that we have 6 processes
 		int index = 0;
-		for (int i = 1; i <= rank; i++) {
+		for (int i = 0; i < rank; i++) {
+
+			//
+			cout << "trimis" << endl;
+			//
+
 			MPI_Send(student + index, 2, MPI_Student, i, 1, MPI_COMM_WORLD);
 			index += 2;
 		}
 
 	}
 
-	if (rank != 0){
 
-		MPI_Recv(studentBuffer, 2, MPI_Student, 0, 1, MPI_COMM_WORLD, &status);
+	MPI_Recv(studentBuufer, 2, MPI_Student, 0, 1, MPI_COMM_WORLD, &status);
 
-		for (int i = 0; i < 2; i++) {
-			if (studentBuffer[i].studentID == studID) {
-				cout << "Student found!";
-			}
+	for (int i = 0; i < 2; i++) {
+
+		if (studentBuufer[i].studentID == studID) {
+			cout << "Student found!";
 		}
-
 	}
+
+
+	MPI_Type_free(&MPI_Student);
 	MPI_Finalize();
 
 	return 0;

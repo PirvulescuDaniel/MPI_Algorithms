@@ -19,7 +19,6 @@ int main() {
 	};
 
 	Student student[6];
-	Student studentBuufer[6];
 
 	int blockcounts[2];
 	MPI_Datatype oldtypes[2], MPI_Student;
@@ -36,7 +35,7 @@ int main() {
 	offset[0] = 0;
 
 	//MPI_FLOAT field
-	MPI_Type_get_extent(MPI_INT,&lower_bound, &extent);
+	MPI_Type_get_extent(MPI_INT, &lower_bound, &extent);
 	blockcounts[1] = 1;
 	oldtypes[1] = MPI_FLOAT;
 	offset[1] = 3 * extent;
@@ -52,17 +51,13 @@ int main() {
 			student[i].studentID = i;
 			student[i].year = (1 + rand()) % 5;
 			student[i].age = (19 + rand()) % 31;
-			student[i].grade = float( (1 + rand()) % 11 );
+			student[i].grade = float((1 + rand()) % 11);
 
 		}
 
-		//assume that we have 6 processes
+		//assume that we have 4 processes(1 master and 3 slaves)
 		int index = 0;
-		for (int i = 0; i < rank; i++) {
-
-			//
-			cout << "trimis" << endl;
-			//
+		for (int i = 1; i < size; i++) {
 
 			MPI_Send(student + index, 2, MPI_Student, i, 1, MPI_COMM_WORLD);
 			index += 2;
@@ -70,14 +65,17 @@ int main() {
 
 	}
 
+	if (rank != 0) {
 
-	MPI_Recv(studentBuufer, 2, MPI_Student, 0, 1, MPI_COMM_WORLD, &status);
+		MPI_Recv(student, 2, MPI_Student, 0, 1, MPI_COMM_WORLD, &status);
 
-	for (int i = 0; i < 2; i++) {
+		for (int i = 0; i < 2; i++) {
 
-		if (studentBuufer[i].studentID == studID) {
-			cout << "Student found!";
+			if (student[i].studentID == studID) {
+				cout << "Student found!";
+			}
 		}
+
 	}
 
 
